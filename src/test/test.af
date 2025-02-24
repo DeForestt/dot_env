@@ -1,0 +1,18 @@
+.needs <std>
+
+import {case, report, require} from "ATest.af" under test;
+import string from "String";
+import TestSuite from "ATest.af";
+import {dot_env} from "src/mod" under lib;
+
+bool test_dot_env() : test.case("test_dot_env") {
+	 return test.require(dot_env(1, 2) == 3, "1 + 2 = 3");
+};
+
+int main() {
+	TestSuite suite = new TestSuite("dot_env Test Suite");
+	suite.addCase(test_dot_env);
+	suite.run();
+	test.report();
+	return 0;
+};

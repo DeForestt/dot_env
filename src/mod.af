@@ -1,0 +1,30 @@
+.needs <std>
+
+import Option from "Utils/Option";
+import Result from "Utils/Result";
+import { envVar } from "System" under sys;
+import Map from "Utils/Map";
+import string from "String";
+import File from "files";
+import { openFile } from "files" under fs;
+import Defer from "Utils/Defer";
+import Function from "Utils/Functions";
+import List from "Collections";
+import {print} from "io" under io;
+
+private fn fromEnv(string key) -> string? {
+	string val = fs.openFile("./.env").match({
+		"ok": [File file] => {
+			let __defer = new Defer(new Function([File f] => f.close(), file));
+			let lines = file.toList('\n');
+			io.print("good");
+		},
+		"_": [] => NULL
+	});
+
+	return val;
+};
+
+export fn get(string key) -> string? {
+	return;
+};
