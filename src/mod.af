@@ -26,5 +26,7 @@ private fn fromEnv(string key) -> string? {
 };
 
 export fn get(string key) -> string? {
-	return;
+	let value = sys.envVar(key.cstr());
+	if value != NULL return new string(value);
+	return fromEnv(key);
 };
