@@ -10,23 +10,75 @@ import { openFile } from "files" under fs;
 import Defer from "Utils/Defer";
 import Function from "Utils/Functions";
 import List from "Collections";
-import {print} from "io" under io;
+import { none } from "Utils/Option" under opt;
 
-private fn fromEnv(string key) -> string? {
-	string val = fs.openFile("./.env").match({
-		"ok": [File file] => {
-			let __defer = new Defer(new Function([File f] => f.close(), file));
-			let lines = file.toList('\n');
-			io.print("good");
-		},
-		"_": [] => NULL
+
+mutable Map envMap = NULL;
+mutable Map envCache = NULL;
+
+private fn mapFromFile(File file) -> Map {
+	let map = new Map();
+	let __defer = new Defer(new Function([File f] => f.close(), file));
+	let all = file.readToEnd();
+	let lines = all.split('\n');
+	for int i = 0; i < lines.getCount(); i++ {
+		string line = lines.get(i).expect("Corupted env file");
+		if line.len() == 0 continue;
+		if line.at(0) == '#' continue;
+
+		let parts = line.split('=');
+		if parts.getCount() == 2 {
+			string key = parts.get(0).expect("Corupted env file");
+			string value = parts.get(1).expect("Corupted env file");
+			value.get();
+			map.set(key.cstr(), value);
+		};
+	};
+	return map;
+};
+
+private fn loadMap() -> Map {
+	return fs.openFile("./.env").match({
+		"ok": [File f] => mapFromFile(f),
+		"_": [] => return {}
 	});
+};
 
-	return val;
+private fn getMap() -> Map {
+	if envMap == NULL {
+		envMap = loadMap();
+	};
+	return envMap;
+};
+
+private fn getCache() -> Map {
+	if envCache == NULL {
+		envCache = new Map();
+	};
+	return envCache;
+};
+
+private fn getFromEnv(string key) -> string? {
+	any value = getCache().get(key).match({
+		"some": [string val] => val,
+		"none": [string k] => {
+			let val = sys.envVar(k.cstr());
+			let val = new string(val);
+			if val != NULL {
+				let cache = getCache();
+				cache.set(k.cstr(), val);
+				return val;
+			};
+			return NULL;
+		}
+	}, key);
+	return value;
 };
 
 export fn get(string key) -> string? {
-	let value = sys.envVar(key.cstr());
-	if value != NULL return new string(value);
-	return fromEnv(key);
+	let value = getFromEnv(key);
+	if value.isSome() {
+		return value.get();
+	};
+	return getMap().get(key.cstr());
 };
