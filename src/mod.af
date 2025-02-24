@@ -11,6 +11,7 @@ import Defer from "Utils/Defer";
 import Function from "Utils/Functions";
 import List from "Collections";
 import { none } from "Utils/Option" under opt;
+import {print} from "String" under str;
 
 
 mutable Map envMap = NULL;
@@ -30,8 +31,8 @@ private fn mapFromFile(File file) -> Map {
 		if parts.getCount() == 2 {
 			string key = parts.get(0).expect("Corupted env file");
 			string value = parts.get(1).expect("Corupted env file");
-			value.get();
-			map.set(key.cstr(), value);
+			let noSpaces = value.trim();
+			map.set(key.cstr(), noSpaces.trim('"'));
 		};
 	};
 	return map;
@@ -63,10 +64,10 @@ private fn getFromEnv(string key) -> string? {
 		"some": [string val] => val,
 		"none": [string k] => {
 			let val = sys.envVar(k.cstr());
-			let val = new string(val);
 			if val != NULL {
 				let cache = getCache();
-				cache.set(k.cstr(), val);
+				let val = new string(val);
+				cache.set(k.cstr(), val.trim());
 				return val;
 			};
 			return NULL;
@@ -76,9 +77,10 @@ private fn getFromEnv(string key) -> string? {
 };
 
 export fn get(string key) -> string? {
-	let value = getFromEnv(key);
+	let _key = key.trim();
+	let value = getFromEnv(_key);
 	if value.isSome() {
 		return value.get();
 	};
-	return getMap().get(key.cstr());
+	return getMap().get(_key.cstr());
 };
